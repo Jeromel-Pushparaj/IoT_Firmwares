@@ -1,0 +1,12 @@
+{
+	"folders": [
+		{
+			"path": "../../ESP32HelloWorld"
+		},
+		{
+			"name": "Esp32WifiConfig",
+			"path": ".."
+		}
+	],
+	"settings": {}
+}

@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home Automation UML Use Case Diagram</title>
+    <script src="https://unpkg.com/gojs/release/go.js"></script>
+    <style>
+        #diagram-container {
+            width: 100%;
+            height: 600px;
+            border: 1px solid #ccc;
+        }
+    </style>
+</head>
+<body>
+
+    <h2>Home Automation Use Case Diagram</h2>
+    <div id="diagram-container"></div>
+
+    <script>
+        function init() {
+            var $ = go.GraphObject.make;
+            var diagram = $(go.Diagram, "diagram-container", {
+                "undoManager.isEnabled": true
+            });
+
+            // Define Actor (stick figure)
+            diagram.nodeTemplateMap.add("Actor",
+                $(go.Node, "Vertical",
+                    { locationSpot: go.Spot.Center },
+                    $(go.Shape, "Circle", { width: 50, height: 50, fill: "#3498db" }),
+                    $(go.TextBlock, { margin: 5, font: "bold 14px sans-serif", stroke: "white" },
+                        new go.Binding("text", "name"))
+                )
+            );
+
+            // Define Use Case (ellipse)
+            diagram.nodeTemplateMap.add("UseCase",
+                $(go.Node, "Auto",
+                    $(go.Shape, "Ellipse", { width: 150, height: 70, fill: "#2ecc71" }),
+                    $(go.TextBlock, { margin: 5, font: "bold 14px sans-serif", stroke: "white" },
+                        new go.Binding("text", "name"))
+                )
+            );
+
+            // Define Links
+            diagram.linkTemplate =
+                $(go.Link,
+                    { routing: go.Link.AvoidsNodes, curve: go.Link.JumpOver },
+                    $(go.Shape, { strokeWidth: 2 })
+                );
+
+            // Create Diagram Data
+            diagram.model = new go.GraphLinksModel(
+                [
+                    { key: 1, category: "Actor", name: "Homeowner" },
+                    { key: 2, category: "Actor", name: "Guest" },
+                    { key: 3, category: "UseCase", name: "Control Devices" },
+                    { key: 4, category: "UseCase", name: "Set Automation Rules" },
+                    { key: 5, category: "UseCase", name: "Monitor Home" },
+                    { key: 6, category: "UseCase", name: "Manage Users" }
+                ],
+                [
+                    { from: 1, to: 3 },
+                    { from: 1, to: 4 },
+                    { from: 1, to: 5 },
+                    { from: 1, to: 6 },
+                    { from: 2, to: 3 }
+                ]
+            );
+        }
+        
+        window.onload = init;
+    </script>
+</body>
+</html>
