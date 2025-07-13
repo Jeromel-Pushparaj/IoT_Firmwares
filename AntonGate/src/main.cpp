@@ -6,13 +6,18 @@
 #define RELAY_PIN 27
 
 void setup() {
-  pinMode(PIR_SENSOR_PIN, INPUT_PULLDOWN);
-  pinMode(DAY_NIGHT_SENSOR_PIN, INPUT_PULLDOWN);
-  pinMode(WIFI_MODULE_PIN, INPUT_PULLDOWN);
-  pinMode(RELAY_PIN, OUTPUT);
-  digitalWrite(RELAY_PIN, LOW);  // Ensure relay is OFF at startup
   Serial.begin(921600);
+
+  pinMode(PIR_SENSOR_PIN, INPUT);
+  pinMode(DAY_NIGHT_SENSOR_PIN, INPUT);
+  pinMode(WIFI_MODULE_PIN, INPUT);
+
+  pinMode(RELAY_PIN, OUTPUT);
+  digitalWrite(RELAY_PIN, LOW);
+
+  delay(1000);  // Wait for sensors to stabilize
 }
+
 
 void loop() {
   int pirState = digitalRead(PIR_SENSOR_PIN);
