@@ -9,22 +9,23 @@
 const char *service_name = "PROV_123456";
 const char *pop = "12345678";
 
-int servoPin = 13; // PWM pin
-const int freq = 50; // 50Hz for servo
+int servo_pin = 13;          // PWM pin for servo
+const int freq = 50;         // 50Hz for servo
 const int ledChannel = 0;
-const int resolution = 16; // 16-bit resolution
+const int resolution = 16;   // 16-bit resolution
+const int pcStatusPin = 12; // Pin to indicate PC status (optional) if pc turned on it give 5v
+
 
 static uint8_t gpio_reset = 0;
 static uint8_t relay_pin = 2;
 static uint8_t manual_switch_pin = 4;
-static uint8_t servo_pin = 5;
 
 bool relay_state = DEFAULT_RELAY_MODE;
 bool wifi_connected = false;
 bool last_manual_switch_state = HIGH;
 
 static Switch my_switch("light", &relay_pin);
-static Switch my_pc("PC", &servo_pin);
+static Switch my_pc("pc", &servo_pin);
 
 void updateRelayState(bool state) {
     relay_state = state;
@@ -34,21 +35,29 @@ void updateRelayState(bool state) {
 }
 
 void setServoAngle(int angle) {
-  // Convert angle (0-180) to duty cycle (500-2500 microseconds)
-  int duty = map(angle, 0, 180, 1638, 8192); // 16-bit duty cycle
-  ledcWrite(ledChannel, duty);
+    // Convert angle (0-180) to duty cycle (500-2500 microseconds)
+    int duty = map(angle, 0, 180, 1638, 8192); // 16-bit duty cycle
+    ledcWrite(ledChannel, duty);
 }
+
 void turnOnPC() {
-  for (int angle = 100; angle <= 130; angle++) {
-    setServoAngle(angle);
-  }
-  delay(1000);
-  for (int angle = 130; angle >= 100; angle--) {
-    setServoAngle(angle);
-  }
-  delay(1000);
-    my_pc.updateAndReportParam(ESP_RMAKER_DEF_POWER_NAME, true);
-    Serial.println("PC turned ON");
+    Serial.println("Turning ON PC...");
+    for (int angle = 100; angle <= 135; angle++) {
+        setServoAngle(angle);
+        delay(15); // Smooth movement
+    }
+    delay(1500); // Hold button for 1 sec
+    for (int angle = 135; angle >= 100; angle--) {
+        setServoAngle(angle);
+        delay(15);
+    }
+    bool pc_state = digitalRead(pcStatusPin);
+    if (pc_state == HIGH) {
+        Serial.println("PC is ON");
+    } else {
+        Serial.println("PC did not turn ON");
+    }
+    my_pc.updateAndReportParam(ESP_RMAKER_DEF_POWER_NAME, pc_state);
 }
 
 void write_callback(Device *device, Param *param, const param_val_t val, void *priv_data, write_ctx_t *ctx) {
@@ -68,7 +77,6 @@ void write_callback(Device *device, Param *param, const param_val_t val, void *p
             Serial.println("PC turned OFF");
         }
     }
-    
 }
 
 void sysProvEvent(arduino_event_t *sys_event) {
@@ -95,6 +103,7 @@ void sysProvEvent(arduino_event_t *sys_event) {
             break;
     }
 }
+
 void checkManualSwitch() {
     bool current_state = digitalRead(manual_switch_pin);
 
@@ -110,15 +119,22 @@ void checkManualSwitch() {
 void setup() {
     Serial.begin(115200);
 
-  ledcSetup(ledChannel, freq, resolution);
-  ledcAttachPin(servoPin, ledChannel);
+    // Setup PWM for servo
+    ledcSetup(ledChannel, freq, resolution);
+    ledcAttachPin(servo_pin, ledChannel);
+    setServoAngle(100); // Set initial angle (no press)
+
     pinMode(relay_pin, OUTPUT);
     pinMode(manual_switch_pin, INPUT_PULLUP);
     digitalWrite(relay_pin, relay_state ? HIGH : LOW);
 
     Node my_node = RMaker.initNode("Relay Controller");
+
     my_switch.addCb(write_callback);
     my_node.addDevice(my_switch);
+
+    my_pc.addCb(write_callback);
+    my_node.addDevice(my_pc);
 
     RMaker.enableOTA(OTA_USING_PARAMS);
     RMaker.enableTZService();
@@ -153,3 +169,4 @@ void loop() {
     checkManualSwitch();
     delay(100);
 }
+
